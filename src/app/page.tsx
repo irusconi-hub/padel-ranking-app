@@ -51,7 +51,7 @@ export default function Home() {
   const [b2, setB2] = useState("");
   const [score, setScore] = useState("");
   const [winner, setWinner] = useState<"A" | "B">("A");
-
+  const [successMessage, setSuccessMessage] = useState("");
   const activeClub = clubs.find((c) => c.id === activeClubId);
 
   const ranking = useMemo(() => {
@@ -125,6 +125,11 @@ if (selectedPlayers.length < 2) {
     const losers = winner === "A" ? teamB : teamA;
 
     setMatches([newMatch, ...matches]);
+    setSuccessMessage("Partido guardado correctamente");
+
+setTimeout(() => {
+  setSuccessMessage("");
+}, 3000);
 
     setPlayers((current) =>
       current.map((player) => {
@@ -150,6 +155,11 @@ if (selectedPlayers.length < 2) {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
+      {successMessage && (
+  <div className="fixed right-6 top-6 z-50 rounded-2xl border border-emerald-300/30 bg-emerald-500 px-6 py-4 text-lg font-bold text-slate-950 shadow-2xl">
+    ✅ {successMessage}
+  </div>
+)}
       <section
         className="relative h-[520px] bg-cover bg-center px-6 py-10"
         style={{ backgroundImage: "url('/hero-padel.png')" }}
