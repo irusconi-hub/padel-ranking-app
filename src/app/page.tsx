@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 type Club = { id: string; name: string; city: string };
+
 type Player = {
   id: number;
   clubId: string;
@@ -12,12 +13,13 @@ type Player = {
   wins: number;
   losses: number;
 };
+
 type Match = {
   id: number;
   clubId: string;
   date: string;
-  teamA: string;
-  teamB: string;
+  teamA: number[];
+  teamB: number[];
   score: string;
   winner: "A" | "B";
 };
@@ -31,7 +33,8 @@ const initialPlayers: Player[] = [
   { id: 1, clubId: "san-fernando", name: "Nacho Rusconi", level: "5ta", points: 1240, wins: 8, losses: 3 },
   { id: 2, clubId: "san-fernando", name: "Fede Gandolfo", level: "5ta", points: 1195, wins: 6, losses: 4 },
   { id: 3, clubId: "san-fernando", name: "Mariano", level: "6ta", points: 1130, wins: 5, losses: 5 },
-  { id: 4, clubId: "bm-sports", name: "Juan Cruz", level: "4ta", points: 1310, wins: 10, losses: 2 },
+  { id: 4, clubId: "san-fernando", name: "Martin", level: "6ta", points: 1080, wins: 3, losses: 6 },
+  { id: 5, clubId: "bm-sports", name: "Juan Cruz", level: "4ta", points: 1310, wins: 10, losses: 2 },
 ];
 
 export default function Home() {
@@ -42,8 +45,10 @@ export default function Home() {
 
   const [newClub, setNewClub] = useState("");
   const [newPlayer, setNewPlayer] = useState("");
-  const [teamA, setTeamA] = useState("");
-  const [teamB, setTeamB] = useState("");
+  const [a1, setA1] = useState("");
+  const [a2, setA2] = useState("");
+  const [b1, setB1] = useState("");
+  const [b2, setB2] = useState("");
   const [score, setScore] = useState("");
   const [winner, setWinner] = useState<"A" | "B">("A");
 
@@ -57,6 +62,10 @@ export default function Home() {
 
   const clubMatches = matches.filter((m) => m.clubId === activeClubId);
 
+  function playerName(id: number) {
+    return players.find((p) => p.id === id)?.name ?? "Jugador";
+  }
+
   function addClub() {
     if (!newClub.trim()) return;
     const id = newClub.toLowerCase().replaceAll(" ", "-");
@@ -67,6 +76,7 @@ export default function Home() {
 
   function addPlayer() {
     if (!newPlayer.trim()) return;
+
     setPlayers([
       ...players,
       {
@@ -79,11 +89,27 @@ export default function Home() {
         losses: 0,
       },
     ]);
+
     setNewPlayer("");
   }
 
   function registerMatch() {
-    if (!teamA.trim() || !teamB.trim() || !score.trim()) return;
+    if (!a1 || !b1 || !score.trim()) return;
+const selectedPlayers = [a1, a2, b1, b2].filter(Boolean);
+
+const uniquePlayers = new Set(selectedPlayers);
+
+if (selectedPlayers.length !== uniquePlayers.size) {
+  alert("No podés seleccionar el mismo jugador más de una vez.");
+  return;
+}
+
+if (selectedPlayers.length < 2) {
+  alert("Tenés que seleccionar jugadores.");
+  return;
+}
+    const teamA = [Number(a1), Number(a2)].filter(Boolean);
+    const teamB = [Number(b1), Number(b2)].filter(Boolean);
 
     const newMatch: Match = {
       id: Date.now(),
@@ -95,41 +121,57 @@ export default function Home() {
       winner,
     };
 
+    const winners = winner === "A" ? teamA : teamB;
+    const losers = winner === "A" ? teamB : teamA;
+
     setMatches([newMatch, ...matches]);
 
-    setPlayers((currentPlayers) =>
-      currentPlayers.map((player) => {
-        const isTeamA = teamA.toLowerCase().includes(player.name.toLowerCase());
-        const isTeamB = teamB.toLowerCase().includes(player.name.toLowerCase());
+    setPlayers((current) =>
+      current.map((player) => {
+        if (winners.includes(player.id)) {
+          return { ...player, points: player.points + 20, wins: player.wins + 1 };
+        }
 
-        if (!isTeamA && !isTeamB) return player;
+        if (losers.includes(player.id)) {
+          return { ...player, points: player.points - 10, losses: player.losses + 1 };
+        }
 
-        const playerWon = winner === "A" ? isTeamA : isTeamB;
-
-        return {
-          ...player,
-          points: player.points + (playerWon ? 20 : -10),
-          wins: player.wins + (playerWon ? 1 : 0),
-          losses: player.losses + (playerWon ? 0 : 1),
-        };
+        return player;
       })
     );
 
-    setTeamA("");
-    setTeamB("");
+    setA1("");
+    setA2("");
+    setB1("");
+    setB2("");
     setScore("");
     setWinner("A");
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 p-8 text-white">
-      <section className="mx-auto max-w-6xl">
-        <div className="mb-8 rounded-3xl bg-emerald-500 p-8 text-slate-950">
-          <h1 className="text-4xl font-bold">Ranking de Pádel</h1>
-          <p className="mt-3 text-lg">MVP multi-club con ranking y carga de partidos.</p>
+    <main className="min-h-screen bg-slate-950 text-white">
+      <section
+        className="relative h-[520px] bg-cover bg-center px-6 py-10"
+        style={{ backgroundImage: "url('/hero-padel.png')" }}
+      >
+        <div className="absolute inset-0 bg-slate-950/55" />
+        <div className="relative mx-auto flex h-full max-w-6xl flex-col justify-center">
+          <div className="max-w-2xl rounded-3xl bg-slate-950/70 p-8 shadow-2xl backdrop-blur">
+            <p className="mb-3 text-sm font-bold uppercase tracking-[0.3em] text-emerald-300">
+              Padel Ranking
+            </p>
+            <h1 className="text-4xl font-black md:text-6xl">
+              Ranking, partidos y evolución del club.
+            </h1>
+            <p className="mt-4 text-lg text-slate-200">
+              Cargá resultados, actualizá puntos y seguí el rendimiento de cada jugador.
+            </p>
+          </div>
         </div>
+      </section>
 
-        <div className="grid gap-6 md:grid-cols-3">
+      <section className="mx-auto max-w-6xl px-6 py-8">
+        <div className="grid gap-6 lg:grid-cols-3">
           <div className="rounded-3xl bg-white/10 p-6">
             <h2 className="mb-4 text-xl font-semibold">Clubes</h2>
 
@@ -153,7 +195,7 @@ export default function Home() {
                 value={newClub}
                 onChange={(e) => setNewClub(e.target.value)}
                 placeholder="Nuevo club"
-                className="w-full rounded-xl p-3 text-slate-950"
+                className="w-full rounded-xl bg-white p-3 text-slate-950 placeholder:text-slate-500"
               />
               <button onClick={addClub} className="rounded-xl bg-emerald-400 px-4 font-bold text-slate-950">
                 +
@@ -161,39 +203,41 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="rounded-3xl bg-white/10 p-6 md:col-span-2">
+          <div className="rounded-3xl bg-white/10 p-6 lg:col-span-2">
             <h2 className="text-2xl font-semibold">{activeClub?.name}</h2>
             <p className="mb-5 text-slate-400">Ranking actual del club</p>
 
-            <table className="w-full overflow-hidden rounded-2xl text-left">
-              <thead className="bg-white/10">
-                <tr>
-                  <th className="p-3">#</th>
-                  <th className="p-3">Jugador</th>
-                  <th className="p-3">Cat.</th>
-                  <th className="p-3 text-right">Puntos</th>
-                  <th className="p-3 text-right">Récord</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ranking.map((player, index) => (
-                  <tr key={player.id} className="border-t border-white/10">
-                    <td className="p-3">{index + 1}</td>
-                    <td className="p-3 font-semibold">{player.name}</td>
-                    <td className="p-3">{player.level}</td>
-                    <td className="p-3 text-right">{player.points}</td>
-                    <td className="p-3 text-right">{player.wins}G / {player.losses}P</td>
+            <div className="overflow-hidden rounded-2xl border border-white/10">
+              <table className="w-full text-left text-sm md:text-base">
+                <thead className="bg-white/10">
+                  <tr>
+                    <th className="p-3">#</th>
+                    <th className="p-3">Jugador</th>
+                    <th className="p-3">Cat.</th>
+                    <th className="p-3 text-right">Puntos</th>
+                    <th className="p-3 text-right">Récord</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {ranking.map((player, index) => (
+                    <tr key={player.id} className="border-t border-white/10">
+                      <td className="p-3">{index + 1}</td>
+                      <td className="p-3 font-semibold">{player.name}</td>
+                      <td className="p-3">{player.level}</td>
+                      <td className="p-3 text-right">{player.points}</td>
+                      <td className="p-3 text-right">{player.wins}G / {player.losses}P</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             <div className="mt-5 flex gap-2">
               <input
                 value={newPlayer}
                 onChange={(e) => setNewPlayer(e.target.value)}
                 placeholder="Nuevo jugador"
-                
+                className="w-full rounded-xl bg-white p-3 text-slate-950 placeholder:text-slate-500"
               />
               <button onClick={addPlayer} className="rounded-xl bg-emerald-400 px-5 font-bold text-slate-950">
                 Agregar
@@ -202,21 +246,44 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <div className="rounded-3xl bg-white/10 p-6">
             <h2 className="mb-4 text-xl font-semibold">Cargar partido</h2>
 
-            <div className="space-y-3">
-              <input value={teamA} onChange={(e) => setTeamA(e.target.value)} placeholder="Equipo A: Nacho Rusconi / Fede Gandolfo" className="w-full rounded-xl bg-white p-3 text-slate-950 placeholder:text-slate-500" />
-              <input value={teamB} onChange={(e) => setTeamB(e.target.value)} placeholder="Equipo B: Mariano / Juan Cruz" className="w-full rounded-xl bg-white p-3 text-slate-950 placeholder:text-slate-500" />
-              <input value={score} onChange={(e) => setScore(e.target.value)} placeholder="Resultado: 6-4 6-3" className="w-full rounded-xl bg-white p-3 text-slate-950 placeholder:text-slate-500" />
+            <div className="grid gap-3 md:grid-cols-2">
+              <select value={a1} onChange={(e) => setA1(e.target.value)} className="rounded-xl bg-white p-3 text-slate-950">
+                <option value="">Equipo A - Jugador 1</option>
+                {ranking.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
 
-              <select value={winner} onChange={(e) => setWinner(e.target.value as "A" | "B")} className="w-full rounded-xl bg-white p-3 text-slate-950 placeholder:text-slate-500">
+              <select value={a2} onChange={(e) => setA2(e.target.value)} className="rounded-xl bg-white p-3 text-slate-950">
+                <option value="">Equipo A - Jugador 2</option>
+                {ranking.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+
+              <select value={b1} onChange={(e) => setB1(e.target.value)} className="rounded-xl bg-white p-3 text-slate-950">
+                <option value="">Equipo B - Jugador 1</option>
+                {ranking.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+
+              <select value={b2} onChange={(e) => setB2(e.target.value)} className="rounded-xl bg-white p-3 text-slate-950">
+                <option value="">Equipo B - Jugador 2</option>
+                {ranking.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+
+              <input
+                value={score}
+                onChange={(e) => setScore(e.target.value)}
+                placeholder="Resultado: 6-4 6-3"
+                className="rounded-xl bg-white p-3 text-slate-950 placeholder:text-slate-500 md:col-span-2"
+              />
+
+              <select value={winner} onChange={(e) => setWinner(e.target.value as "A" | "B")} className="rounded-xl bg-white p-3 text-slate-950 md:col-span-2">
                 <option value="A">Ganó Equipo A</option>
                 <option value="B">Ganó Equipo B</option>
               </select>
 
-              <button onClick={registerMatch} className="w-full rounded-xl bg-emerald-400 p-3 font-bold text-slate-950">
+              <button onClick={registerMatch} className="rounded-xl bg-emerald-400 p-3 font-bold text-slate-950 md:col-span-2">
                 Guardar partido
               </button>
             </div>
@@ -232,9 +299,9 @@ export default function Home() {
                 {clubMatches.map((match) => (
                   <div key={match.id} className="rounded-2xl bg-white/10 p-4">
                     <p className="text-sm text-slate-400">{match.date}</p>
-                    <p>{match.teamA}</p>
+                    <p>{match.teamA.map(playerName).join(" / ")}</p>
                     <p className="text-slate-400">vs</p>
-                    <p>{match.teamB}</p>
+                    <p>{match.teamB.map(playerName).join(" / ")}</p>
                     <p className="mt-2 font-bold text-emerald-300">
                       {match.score} · Ganó Equipo {match.winner}
                     </p>
