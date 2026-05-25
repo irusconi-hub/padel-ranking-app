@@ -41,7 +41,6 @@ const initialPlayers: Player[] = [
   { id: 2, clubId: "san-fernando", name: "Fede Gandolfo", level: "5ta", elo: 1195, wins: 6, losses: 4 },
   { id: 3, clubId: "san-fernando", name: "Mariano", level: "6ta", elo: 1130, wins: 5, losses: 5 },
   { id: 4, clubId: "san-fernando", name: "Martin", level: "6ta", elo: 1080, wins: 3, losses: 6 },
-  { id: 5, clubId: "bm-sports", name: "Juan Cruz", level: "4ta", elo: 1310, wins: 10, losses: 2 },
 ];
 
 
@@ -469,15 +468,29 @@ setPlayers((current) =>
                     <th className="p-3">#</th>
                     <th className="p-3">Jugador</th>
                     <th className="p-3">Cat.</th>
-                    <th className="p-3 text-right">Puntos</th>
+                    <th className="p-3 text-right">ELO</th>
                     <th className="p-3 text-right">Récord</th>
                   </tr>
                 </thead>
                 <tbody>
                   {ranking.map((player, index) => (
-                    <tr key={player.id} className="border-t border-white/10">
-                      <td className="p-3">{index + 1}</td>
-                      <td className="p-3 font-semibold">{player.name}</td>
+                    <tr
+  key={player.id}
+  className={`border-t border-white/10 transition-all duration-300 hover:bg-white/10 ${
+    index === 0 ? "bg-emerald-400/10" : ""
+  }`}
+>
+                      <td className="p-3">
+  {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : index + 1}
+</td>
+                      <td className={`p-3 font-semibold ${index === 0 ? "text-emerald-300" : ""}`}>
+  {player.name}
+  {index === 0 && (
+    <span className="ml-2 rounded-full bg-emerald-400 px-2 py-1 text-xs font-bold text-slate-950">
+      Líder
+    </span>
+  )}
+</td>
                       <td className="p-3">{getCategoryFromElo(player.elo)}</td>
                       <td className="p-3 text-right">{player.elo}</td>
                       <td className="p-3 text-right">{player.wins}G / {player.losses}P</td>
@@ -489,11 +502,16 @@ setPlayers((current) =>
 
             <div className="mt-5 flex gap-2">
               <input
-                value={newPlayer}
-                onChange={(e) => setNewPlayer(e.target.value)}
-                placeholder="Nuevo jugador"
-                className="w-full rounded-xl bg-white p-3 text-slate-950 placeholder:text-slate-500"
-              />
+  value={newPlayer}
+  onChange={(e) => setNewPlayer(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      addPlayer();
+    }
+  }}
+  placeholder="Nombre y apellido"
+  className="w-full rounded-xl bg-white p-3 text-slate-950 placeholder:text-slate-500"
+/>
               <button onClick={addPlayer} className="rounded-xl bg-emerald-400 px-5 font-bold text-slate-950">
                 Agregar
               </button>
@@ -545,22 +563,22 @@ setPlayers((current) =>
 <div className="grid gap-3 rounded-2xl bg-white/10 p-4 md:col-span-2">
   <p className="font-semibold text-white">Resultado por sets</p>
 
-  <div className="grid grid-cols-[80px_1fr_1fr] items-center gap-3">
+  <div className="grid grid-cols-[80px_70px_70px] items-center gap-3">
     <span className="text-slate-300">Set 1</span>
-    <input value={set1A} onChange={(e) => setSet1A(e.target.value)} placeholder="A" className="rounded-xl bg-white p-3 text-slate-950" />
-    <input value={set1B} onChange={(e) => setSet1B(e.target.value)} placeholder="B" className="rounded-xl bg-white p-3 text-slate-950" />
+    <input value={set1A} onChange={(e) => setSet1A(e.target.value)} placeholder="A" className="h-12 w-[70px] rounded-xl bg-white text-center text-xl font-bold text-slate-950" />
+    <input value={set1B} onChange={(e) => setSet1B(e.target.value)} placeholder="B" className="h-12 w-[70px] rounded-xl bg-white text-center text-xl font-bold text-slate-950" />
   </div>
 
-  <div className="grid grid-cols-[80px_1fr_1fr] items-center gap-3">
+  <div className="grid grid-cols-[80px_70px_70px] items-center gap-3">
     <span className="text-slate-300">Set 2</span>
-    <input value={set2A} onChange={(e) => setSet2A(e.target.value)} placeholder="A" className="rounded-xl bg-white p-3 text-slate-950" />
-    <input value={set2B} onChange={(e) => setSet2B(e.target.value)} placeholder="B" className="rounded-xl bg-white p-3 text-slate-950" />
+    <input value={set2A} onChange={(e) => setSet2A(e.target.value)} placeholder="A" className="h-12 w-[70px] rounded-xl bg-white text-center text-xl font-bold text-slate-950" />
+    <input value={set2B} onChange={(e) => setSet2B(e.target.value)} placeholder="B" className="h-12 w-[70px] rounded-xl bg-white text-center text-xl font-bold text-slate-950" />
   </div>
 
-  <div className="grid grid-cols-[80px_1fr_1fr] items-center gap-3">
+  <div className="grid grid-cols-[80px_70px_70px] items-center gap-3">
     <span className="text-slate-300">Set 3</span>
-    <input value={set3A} onChange={(e) => setSet3A(e.target.value)} placeholder="A" className="rounded-xl bg-white p-3 text-slate-950" />
-    <input value={set3B} onChange={(e) => setSet3B(e.target.value)} placeholder="B" className="rounded-xl bg-white p-3 text-slate-950" />
+    <input value={set3A} onChange={(e) => setSet3A(e.target.value)} placeholder="A" className="h-12 w-[70px] rounded-xl bg-white text-center text-xl font-bold text-slate-950" />
+    <input value={set3B} onChange={(e) => setSet3B(e.target.value)} placeholder="B" className="h-12 w-[70px] rounded-xl bg-white text-center text-xl font-bold text-slate-950" />
   </div>
 </div>
 
