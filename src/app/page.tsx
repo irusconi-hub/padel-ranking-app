@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Club = { id: string; name: string; city: string };
 
@@ -41,6 +41,27 @@ export default function Home() {
   const [clubs, setClubs] = useState(initialClubs);
   const [players, setPlayers] = useState(initialPlayers);
   const [matches, setMatches] = useState<Match[]>([]);
+  useEffect(() => {
+  const savedPlayers = localStorage.getItem("players");
+  const savedMatches = localStorage.getItem("matches");
+  const savedClubs = localStorage.getItem("clubs");
+
+  if (savedPlayers) setPlayers(JSON.parse(savedPlayers));
+  if (savedMatches) setMatches(JSON.parse(savedMatches));
+  if (savedClubs) setClubs(JSON.parse(savedClubs));
+}, []);
+
+useEffect(() => {
+  localStorage.setItem("players", JSON.stringify(players));
+}, [players]);
+
+useEffect(() => {
+  localStorage.setItem("matches", JSON.stringify(matches));
+}, [matches]);
+
+useEffect(() => {
+  localStorage.setItem("clubs", JSON.stringify(clubs));
+}, [clubs]);
   const [activeClubId, setActiveClubId] = useState("san-fernando");
 
   const [newClub, setNewClub] = useState("");
@@ -49,7 +70,12 @@ export default function Home() {
   const [a2, setA2] = useState("");
   const [b1, setB1] = useState("");
   const [b2, setB2] = useState("");
-  const [score, setScore] = useState("");
+  const [set1A, setSet1A] = useState("");
+  const [set1B, setSet1B] = useState("");
+  const [set2A, setSet2A] = useState("");
+  const [set2B, setSet2B] = useState("");
+  const [set3A, setSet3A] = useState("");
+  const [set3B, setSet3B] = useState("");
   const [winner, setWinner] = useState<"A" | "B">("A");
   const [successMessage, setSuccessMessage] = useState("");
   const activeClub = clubs.find((c) => c.id === activeClubId);
@@ -64,6 +90,27 @@ export default function Home() {
 
   function isPlayerSelected(playerId: number, currentValue: string) {
   const selected = [a1, a2, b1, b2].filter(Boolean);
+
+  function calculateWinner() {
+  let setsA = 0;
+  let setsB = 0;
+
+  [
+    [set1A, set1B],
+    [set2A, set2B],
+    [set3A, set3B],
+  ].forEach(([a, b]) => {
+    if (a === "" || b === "") return;
+
+    if (Number(a) > Number(b)) setsA++;
+    if (Number(b) > Number(a)) setsB++;
+  });
+
+  if (setsA >= 2) return "A";
+  if (setsB >= 2) return "B";
+
+  return null;
+}
 
   return (
     selected.includes(String(playerId)) &&
@@ -101,10 +148,53 @@ export default function Home() {
 
     setNewPlayer("");
   }
+function buildScore() {
+  const sets = [
+    [set1A, set1B],
+    [set2A, set2B],
+    [set3A, set3B],
+  ].filter(([a, b]) => a !== "" && b !== "");
+
+  return sets.map(([a, b]) => `${a}-${b}`).join(" / ");
+}
+
+function calculateWinner() {
+  let setsA = 0;
+  let setsB = 0;
+
+  [
+    [set1A, set1B],
+    [set2A, set2B],
+    [set3A, set3B],
+  ].forEach(([a, b]) => {
+    if (a === "" || b === "") return;
+
+    if (Number(a) > Number(b)) setsA++;
+    if (Number(b) > Number(a)) setsB++;
+  });
+
+  if (setsA >= 2) return "A";
+  if (setsB >= 2) return "B";
+
+  return null;
+}
+
 
   function registerMatch() {
     
-    if (!a1 || !b1 || !score.trim()) return;
+    const finalScore = buildScore();
+    const calculatedWinner = calculateWinner();
+
+if (!calculatedWinner) {
+  alert("El resultado todavía no define un ganador.");
+  return;
+}
+
+
+if (!a1 || !b1 || !set1A || !set1B || !set2A || !set2B) {
+  alert("Completá jugadores y al menos los dos primeros sets.");
+  return;
+}
 const selectedPlayers = [a1, a2, b1, b2].filter(Boolean);
 
 const uniquePlayers = new Set(selectedPlayers);
@@ -127,12 +217,12 @@ if (selectedPlayers.length < 2) {
       date: new Date().toLocaleDateString("es-AR"),
       teamA,
       teamB,
-      score,
-      winner,
+      score: finalScore,
+      winner: calculatedWinner,
     };
 
-    const winners = winner === "A" ? teamA : teamB;
-    const losers = winner === "A" ? teamB : teamA;
+    const winners = calculatedWinner === "A" ? teamA : teamB;
+    const losers = calculatedWinner === "A" ? teamB : teamA;
 
     setMatches([newMatch, ...matches]);
     setSuccessMessage("Partido guardado correctamente");
@@ -159,7 +249,12 @@ setTimeout(() => {
     setA2("");
     setB1("");
     setB2("");
-    setScore("");
+    setSet1A("");
+    setSet1B("");
+    setSet2A("");
+    setSet2B("");
+    setSet3A("");
+    setSet3B("");
     setWinner("A");
   }
 
@@ -307,17 +402,28 @@ setTimeout(() => {
 ))}
               </select>
 
-              <input
-                value={score}
-                onChange={(e) => setScore(e.target.value)}
-                placeholder="Resultado: 6-4 6-3"
-                className="rounded-xl bg-white p-3 text-slate-950 placeholder:text-slate-500 md:col-span-2"
-              />
+<div className="grid gap-3 rounded-2xl bg-white/10 p-4 md:col-span-2">
+  <p className="font-semibold text-white">Resultado por sets</p>
 
-              <select value={winner} onChange={(e) => setWinner(e.target.value as "A" | "B")} className="rounded-xl bg-white p-3 text-slate-950 md:col-span-2">
-                <option value="A">Ganó Equipo A</option>
-                <option value="B">Ganó Equipo B</option>
-              </select>
+  <div className="grid grid-cols-[80px_1fr_1fr] items-center gap-3">
+    <span className="text-slate-300">Set 1</span>
+    <input value={set1A} onChange={(e) => setSet1A(e.target.value)} placeholder="A" className="rounded-xl bg-white p-3 text-slate-950" />
+    <input value={set1B} onChange={(e) => setSet1B(e.target.value)} placeholder="B" className="rounded-xl bg-white p-3 text-slate-950" />
+  </div>
+
+  <div className="grid grid-cols-[80px_1fr_1fr] items-center gap-3">
+    <span className="text-slate-300">Set 2</span>
+    <input value={set2A} onChange={(e) => setSet2A(e.target.value)} placeholder="A" className="rounded-xl bg-white p-3 text-slate-950" />
+    <input value={set2B} onChange={(e) => setSet2B(e.target.value)} placeholder="B" className="rounded-xl bg-white p-3 text-slate-950" />
+  </div>
+
+  <div className="grid grid-cols-[80px_1fr_1fr] items-center gap-3">
+    <span className="text-slate-300">Set 3</span>
+    <input value={set3A} onChange={(e) => setSet3A(e.target.value)} placeholder="A" className="rounded-xl bg-white p-3 text-slate-950" />
+    <input value={set3B} onChange={(e) => setSet3B(e.target.value)} placeholder="B" className="rounded-xl bg-white p-3 text-slate-950" />
+  </div>
+</div>
+
 
               <button onClick={registerMatch} className="rounded-xl bg-emerald-400 p-3 font-bold text-slate-950 md:col-span-2">
                 Guardar partido
