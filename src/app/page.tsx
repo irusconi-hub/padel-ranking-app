@@ -9,7 +9,7 @@ type Player = {
   clubId: string;
   name: string;
   level: string;
-  points: number;
+  elo: number;
   wins: number;
   losses: number;
 };
@@ -30,11 +30,11 @@ const initialClubs: Club[] = [
 ];
 
 const initialPlayers: Player[] = [
-  { id: 1, clubId: "san-fernando", name: "Nacho Rusconi", level: "5ta", points: 1240, wins: 8, losses: 3 },
-  { id: 2, clubId: "san-fernando", name: "Fede Gandolfo", level: "5ta", points: 1195, wins: 6, losses: 4 },
-  { id: 3, clubId: "san-fernando", name: "Mariano", level: "6ta", points: 1130, wins: 5, losses: 5 },
-  { id: 4, clubId: "san-fernando", name: "Martin", level: "6ta", points: 1080, wins: 3, losses: 6 },
-  { id: 5, clubId: "bm-sports", name: "Juan Cruz", level: "4ta", points: 1310, wins: 10, losses: 2 },
+  { id: 1, clubId: "san-fernando", name: "Nacho Rusconi", level: "5ta", elo: 1240, wins: 8, losses: 3 },
+  { id: 2, clubId: "san-fernando", name: "Fede Gandolfo", level: "5ta", elo: 1195, wins: 6, losses: 4 },
+  { id: 3, clubId: "san-fernando", name: "Mariano", level: "6ta", elo: 1130, wins: 5, losses: 5 },
+  { id: 4, clubId: "san-fernando", name: "Martin", level: "6ta", elo: 1080, wins: 3, losses: 6 },
+  { id: 5, clubId: "bm-sports", name: "Juan Cruz", level: "4ta", elo: 1310, wins: 10, losses: 2 },
 ];
 
 
@@ -85,7 +85,7 @@ useEffect(() => {
   const ranking = useMemo(() => {
     return players
       .filter((p) => p.clubId === activeClubId)
-      .sort((a, b) => b.points - a.points);
+      .sort((a, b) => b.elo - a.elo);
   }, [players, activeClubId]);
 
   const clubMatches = matches.filter((m) => m.clubId === activeClubId);
@@ -95,10 +95,10 @@ const totalMatches = clubMatches.length;
 
 const leader = ranking[0]?.name ?? "Sin líder";
 
-const averagePoints =
+const averageElo =
   ranking.length > 0
     ? Math.round(
-        ranking.reduce((sum, player) => sum + player.points, 0) /
+        ranking.reduce((sum, player) => sum + player.elo, 0) /
           ranking.length
       )
     : 0;
@@ -155,7 +155,7 @@ const averagePoints =
         clubId: activeClubId,
         name: newPlayer,
         level: "6ta",
-        points: 1000,
+        elo: 800,
         wins: 0,
         losses: 0,
       },
@@ -194,6 +194,18 @@ function calculateWinner() {
   return null;
 }
 
+function getCategoryFromElo(elo: number) {
+  if (elo >= 1600) return "1ra";
+  if (elo >= 1500) return "2da";
+  if (elo >= 1400) return "3ra";
+  if (elo >= 1300) return "4ta";
+  if (elo >= 1200) return "5ta";
+  if (elo >= 1100) return "6ta";
+  if (elo >= 1000) return "7ma";
+  if (elo >= 900) return "8va";
+
+  return "9na";
+}
 
   function registerMatch() {
     
@@ -246,19 +258,65 @@ setTimeout(() => {
   setSuccessMessage("");
 }, 3000);
 
-    setPlayers((current) =>
-      current.map((player) => {
-        if (winners.includes(player.id)) {
-          return { ...player, points: player.points + 20, wins: player.wins + 1 };
-        }
+const avgTeamA =
+  teamA.reduce(
+    (sum, id) => sum + players.find((p) => p.id === id)!.elo,
+    0
+  ) / teamA.length;
 
-        if (losers.includes(player.id)) {
-          return { ...player, points: player.points - 10, losses: player.losses + 1 };
-        }
+const avgTeamB =
+  teamB.reduce(
+    (sum, id) => sum + players.find((p) => p.id === id)!.elo,
+    0
+  ) / teamB.length;
 
-        return player;
-      })
-    );
+const expectedA = 1 / (1 + Math.pow(10, (avgTeamB - avgTeamA) / 400));
+const expectedB = 1 / (1 + Math.pow(10, (avgTeamA - avgTeamB) / 400));
+
+const scoreA = calculatedWinner === "A" ? 1 : 0;
+const scoreB = calculatedWinner === "B" ? 1 : 0;
+
+const k = 32;
+
+setPlayers((current) =>
+  current.map((player) => {
+    if (teamA.includes(player.id)) {
+      return {
+        ...player,
+        elo: Math.round(
+          player.elo + k * (scoreA - expectedA)
+        ),
+        wins:
+          calculatedWinner === "A"
+            ? player.wins + 1
+            : player.wins,
+        losses:
+          calculatedWinner === "B"
+            ? player.losses + 1
+            : player.losses,
+      };
+    }
+
+    if (teamB.includes(player.id)) {
+      return {
+        ...player,
+        elo: Math.round(
+          player.elo + k * (scoreB - expectedB)
+        ),
+        wins:
+          calculatedWinner === "B"
+            ? player.wins + 1
+            : player.wins,
+        losses:
+          calculatedWinner === "A"
+            ? player.losses + 1
+            : player.losses,
+      };
+    }
+
+    return player;
+  })
+);
 
     setA1("");
     setA2("");
@@ -319,7 +377,7 @@ setTimeout(() => {
 
   <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur transform transition-all duration-300 hover:scale-105 hover:bg-white/20">
     <p className="text-sm text-slate-400">Promedio</p>
-    <h3 className="mt-2 text-3xl font-black">{averagePoints}</h3>
+    <h3 className="mt-2 text-3xl font-black">{averageElo}</h3>
   </div>
 </div>
         <div className="grid gap-6 lg:grid-cols-3">
@@ -374,8 +432,8 @@ setTimeout(() => {
                     <tr key={player.id} className="border-t border-white/10">
                       <td className="p-3">{index + 1}</td>
                       <td className="p-3 font-semibold">{player.name}</td>
-                      <td className="p-3">{player.level}</td>
-                      <td className="p-3 text-right">{player.points}</td>
+                      <td className="p-3">{getCategoryFromElo(player.elo)}</td>
+                      <td className="p-3 text-right">{player.elo}</td>
                       <td className="p-3 text-right">{player.wins}G / {player.losses}P</td>
                     </tr>
                   ))}
