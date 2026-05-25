@@ -4,6 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 
 type Club = { id: string; name: string; city: string };
 
+type Activity = {
+  id: number;
+  clubId: string;
+  date: string;
+  message: string;
+};
+
 type Player = {
   id: number;
   clubId: string;
@@ -43,10 +50,13 @@ export default function Home() {
   const [clubs, setClubs] = useState(initialClubs);
   const [players, setPlayers] = useState(initialPlayers);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   useEffect(() => {
   const savedPlayers = localStorage.getItem("players");
   const savedMatches = localStorage.getItem("matches");
   const savedClubs = localStorage.getItem("clubs");
+  const savedActivities = localStorage.getItem("activities");
+if (savedActivities) setActivities(JSON.parse(savedActivities));
 
   if (savedPlayers) setPlayers(JSON.parse(savedPlayers));
   if (savedMatches) setMatches(JSON.parse(savedMatches));
@@ -56,6 +66,10 @@ export default function Home() {
 useEffect(() => {
   localStorage.setItem("players", JSON.stringify(players));
 }, [players]);
+
+useEffect(() => {
+  localStorage.setItem("activities", JSON.stringify(activities));
+}, [activities]);
 
 useEffect(() => {
   localStorage.setItem("matches", JSON.stringify(matches));
@@ -94,7 +108,9 @@ useEffect(() => {
 const totalMatches = clubMatches.length;
 
 const leader = ranking[0]?.name ?? "Sin líder";
-
+const clubActivities = activities.filter(
+  (a) => a.clubId === activeClubId
+);
 const averageElo =
   ranking.length > 0
     ? Math.round(
@@ -254,6 +270,20 @@ if (selectedPlayers.length < 2) {
     setMatches([newMatch, ...matches]);
     setSuccessMessage("Partido guardado correctamente");
 
+    const winnerTeam = calculatedWinner === "A" ? teamA : teamB;
+const loserTeam = calculatedWinner === "A" ? teamB : teamA;
+
+const activity: Activity = {
+  id: Date.now(),
+  clubId: activeClubId,
+  date: new Date().toLocaleString("es-AR"),
+  message: `🎾 ${winnerTeam.map(playerName).join(" / ")} venció a ${loserTeam
+    .map(playerName)
+    .join(" / ")} por ${finalScore}`,
+};
+const clubActivities = activities.filter((a) => a.clubId === activeClubId);
+setActivities([activity, ...activities]);
+
 setTimeout(() => {
   setSuccessMessage("");
 }, 3000);
@@ -379,6 +409,22 @@ setPlayers((current) =>
     <p className="text-sm text-slate-400">Promedio</p>
     <h3 className="mt-2 text-3xl font-black">{averageElo}</h3>
   </div>
+</div>
+<div className="mt-6 rounded-3xl bg-white/10 p-6">
+  <h2 className="mb-4 text-xl font-semibold">Última actividad</h2>
+
+  {clubActivities.length === 0 ? (
+    <p className="text-slate-400">Todavía no hay actividad registrada.</p>
+  ) : (
+    <div className="space-y-3">
+      {clubActivities.slice(0, 5).map((activity) => (
+        <div key={activity.id} className="rounded-2xl bg-white/10 p-4">
+          <p className="text-sm text-slate-400">{activity.date}</p>
+          <p className="mt-1 font-medium">{activity.message}</p>
+        </div>
+      ))}
+    </div>
+  )}
 </div>
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="rounded-3xl bg-white/10 p-6">
