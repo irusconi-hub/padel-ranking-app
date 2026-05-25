@@ -37,6 +37,8 @@ const initialPlayers: Player[] = [
   { id: 5, clubId: "bm-sports", name: "Juan Cruz", level: "4ta", points: 1310, wins: 10, losses: 2 },
 ];
 
+
+
 export default function Home() {
   const [clubs, setClubs] = useState(initialClubs);
   const [players, setPlayers] = useState(initialPlayers);
@@ -87,6 +89,19 @@ useEffect(() => {
   }, [players, activeClubId]);
 
   const clubMatches = matches.filter((m) => m.clubId === activeClubId);
+  const totalPlayers = ranking.length;
+
+const totalMatches = clubMatches.length;
+
+const leader = ranking[0]?.name ?? "Sin líder";
+
+const averagePoints =
+  ranking.length > 0
+    ? Math.round(
+        ranking.reduce((sum, player) => sum + player.points, 0) /
+          ranking.length
+      )
+    : 0;
 
   function isPlayerSelected(playerId: number, currentValue: string) {
   const selected = [a1, a2, b1, b2].filter(Boolean);
@@ -286,6 +301,27 @@ setTimeout(() => {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-8">
+        <div className="mb-6 grid gap-4 md:grid-cols-4">
+  <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur transform transition-all duration-300 hover:scale-105 hover:bg-white/20">
+    <p className="text-sm text-slate-400">Jugadores</p>
+    <h3 className="mt-2 text-3xl font-black">{totalPlayers}</h3>
+  </div>
+
+  <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur transform transition-all duration-300 hover:scale-105 hover:bg-white/20">
+    <p className="text-sm text-slate-400">Partidos</p>
+    <h3 className="mt-2 text-3xl font-black">{totalMatches}</h3>
+  </div>
+
+  <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur transform transition-all duration-300 hover:scale-105 hover:bg-white/20">
+    <p className="text-sm text-slate-400">Líder</p>
+    <h3 className="mt-2 text-2xl font-black">{leader}</h3>
+  </div>
+
+  <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur transform transition-all duration-300 hover:scale-105 hover:bg-white/20">
+    <p className="text-sm text-slate-400">Promedio</p>
+    <h3 className="mt-2 text-3xl font-black">{averagePoints}</h3>
+  </div>
+</div>
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="rounded-3xl bg-white/10 p-6">
             <h2 className="mb-4 text-xl font-semibold">Clubes</h2>
