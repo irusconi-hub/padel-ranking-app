@@ -62,6 +62,15 @@ export default function Home() {
 
   const clubMatches = matches.filter((m) => m.clubId === activeClubId);
 
+  function isPlayerSelected(playerId: number, currentValue: string) {
+  const selected = [a1, a2, b1, b2].filter(Boolean);
+
+  return (
+    selected.includes(String(playerId)) &&
+    currentValue !== String(playerId)
+  );
+}
+
   function playerName(id: number) {
     return players.find((p) => p.id === id)?.name ?? "Jugador";
   }
@@ -94,6 +103,7 @@ export default function Home() {
   }
 
   function registerMatch() {
+    
     if (!a1 || !b1 || !score.trim()) return;
 const selectedPlayers = [a1, a2, b1, b2].filter(Boolean);
 
@@ -263,22 +273,38 @@ setTimeout(() => {
             <div className="grid gap-3 md:grid-cols-2">
               <select value={a1} onChange={(e) => setA1(e.target.value)} className="rounded-xl bg-white p-3 text-slate-950">
                 <option value="">Equipo A - Jugador 1</option>
-                {ranking.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+               {ranking.map((p) => (
+  <option key={p.id} value={p.id} disabled={isPlayerSelected(p.id, a1)}>
+    {p.name}
+  </option>
+))}
               </select>
 
               <select value={a2} onChange={(e) => setA2(e.target.value)} className="rounded-xl bg-white p-3 text-slate-950">
                 <option value="">Equipo A - Jugador 2</option>
-                {ranking.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {ranking.map((p) => (
+  <option key={p.id} value={p.id} disabled={isPlayerSelected(p.id, a2)}>
+    {p.name}
+  </option>
+))}
               </select>
 
               <select value={b1} onChange={(e) => setB1(e.target.value)} className="rounded-xl bg-white p-3 text-slate-950">
                 <option value="">Equipo B - Jugador 1</option>
-                {ranking.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {ranking.map((p) => (
+  <option key={p.id} value={p.id} disabled={isPlayerSelected(p.id, b1)}>
+    {p.name}
+  </option>
+))}
               </select>
 
               <select value={b2} onChange={(e) => setB2(e.target.value)} className="rounded-xl bg-white p-3 text-slate-950">
                 <option value="">Equipo B - Jugador 2</option>
-                {ranking.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {ranking.map((p) => (
+  <option key={p.id} value={p.id} disabled={isPlayerSelected(p.id, b2)}>
+    {p.name}
+  </option>
+))}
               </select>
 
               <input
