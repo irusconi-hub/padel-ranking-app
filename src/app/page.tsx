@@ -187,7 +187,7 @@ const averageElo =
   );
 }
 
-  function playerName(id: number) {
+  function playerName(id: string) {
     return players.find((p) => p.id === id)?.name ?? "Jugador";
   }
 
