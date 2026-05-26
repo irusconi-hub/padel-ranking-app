@@ -26,8 +26,8 @@ type Match = {
   id: number;
   clubId: string;
   date: string;
-  teamA: number[];
-  teamB: number[];
+  teamA: string[];
+  teamB: string[];
   score: string;
   winner: "A" | "B";
 };
@@ -157,7 +157,7 @@ const averageElo =
       )
     : 0;
 
-  function isPlayerSelected(playerId: number, currentValue: string) {
+  function isPlayerSelected(playerId: string, currentValue: string) {
   const selected = [a1, a2, b1, b2].filter(Boolean);
 
   function calculateWinner() {
