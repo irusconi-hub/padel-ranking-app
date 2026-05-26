@@ -13,7 +13,7 @@ type Activity = {
 };
 
 type Player = {
-  id: number;
+  id: string;
   clubId: string;
   name: string;
   level: string;
@@ -38,10 +38,10 @@ const initialClubs: Club[] = [
 ];
 
 const initialPlayers: Player[] = [
-  { id: 1, clubId: "san-fernando", name: "Nacho Rusconi", level: "5ta", elo: 1240, wins: 8, losses: 3 },
-  { id: 2, clubId: "san-fernando", name: "Fede Gandolfo", level: "5ta", elo: 1195, wins: 6, losses: 4 },
-  { id: 3, clubId: "san-fernando", name: "Mariano", level: "6ta", elo: 1130, wins: 5, losses: 5 },
-  { id: 4, clubId: "san-fernando", name: "Martin", level: "6ta", elo: 1080, wins: 3, losses: 6 },
+  { id: "1", clubId: "san-fernando", name: "Nacho Rusconi", level: "5ta", elo: 1240, wins: 8, losses: 3 },
+  { id: "2", clubId: "san-fernando", name: "Fede Gandolfo", level: "5ta", elo: 1195, wins: 6, losses: 4 },
+  { id: "3", clubId: "san-fernando", name: "Mariano", level: "6ta", elo: 1130, wins: 5, losses: 5 },
+  { id: "4", clubId: "san-fernando", name: "Martin", level: "6ta", elo: 1080, wins: 3, losses: 6 },
 ];
 
 
@@ -51,16 +51,54 @@ export default function Home() {
   const [players, setPlayers] = useState(initialPlayers);
   const [matches, setMatches] = useState<Match[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-  useEffect(() => {
-  const savedPlayers = localStorage.getItem("players");
-  const savedMatches = localStorage.getItem("matches");
-  const savedClubs = localStorage.getItem("clubs");
-  const savedActivities = localStorage.getItem("activities");
-if (savedActivities) setActivities(JSON.parse(savedActivities));
+useEffect(() => {
+  async function loadData() {
+    const { data: clubsData, error: clubsError } = await supabase
+      .from("clubs")
+      .select("*")
+      .order("created_at", { ascending: true });
 
-  if (savedPlayers) setPlayers(JSON.parse(savedPlayers));
-  if (savedMatches) setMatches(JSON.parse(savedMatches));
-  if (savedClubs) setClubs(JSON.parse(savedClubs));
+    if (clubsError) {
+      console.log("ERROR LOADING CLUBS:", clubsError);
+    }
+
+    if (clubsData && clubsData.length > 0) {
+      setClubs(
+        clubsData.map((club) => ({
+          id: club.id,
+          name: club.name,
+          city: club.city ?? "Argentina",
+        }))
+      );
+
+      setActiveClubId(clubsData[0].id);
+    }
+
+    const { data: playersData, error: playersError } = await supabase
+      .from("players")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    if (playersError) {
+      console.log("ERROR LOADING PLAYERS:", playersError);
+    }
+
+    if (playersData) {
+      setPlayers(
+        playersData.map((player) => ({
+          id: player.id,
+          clubId: player.club_id,
+          name: `${player.first_name} ${player.last_name}`,
+          level: "9na",
+          elo: player.elo,
+          wins: player.wins,
+          losses: player.losses,
+        }))
+      );
+    }
+  }
+
+  loadData();
 }, []);
 
 useEffect(() => {
@@ -175,24 +213,44 @@ async function addClub() {
   }
 }
 
-  function addPlayer() {
-    if (!newPlayer.trim()) return;
+  async function addPlayer() {
+  if (!newPlayer.trim()) return;
 
-    setPlayers([
-      ...players,
+  const nameParts = newPlayer.trim().split(" ");
+  const firstName = nameParts[0];
+  const lastName = nameParts.slice(1).join(" ") || "-";
+
+  const { data, error } = await supabase
+    .from("players")
+    .insert([
       {
-        id: Date.now(),
-        clubId: activeClubId,
-        name: newPlayer,
-        level: "6ta",
+        club_id: activeClubId,
+        first_name: firstName,
+        last_name: lastName,
         elo: 800,
         wins: 0,
         losses: 0,
       },
-    ]);
+    ])
+    .select();
 
+  console.log("SUPABASE PLAYER INSERT:", data, error);
+
+  if (data && data[0]) {
+    const newPlayerFromDb = {
+      id: data[0].id,
+      clubId: data[0].club_id,
+      name: `${data[0].first_name} ${data[0].last_name}`,
+      level: "9na",
+      elo: data[0].elo,
+      wins: data[0].wins,
+      losses: data[0].losses,
+    };
+
+    setPlayers([...players, newPlayerFromDb]);
     setNewPlayer("");
   }
+}
 function buildScore() {
   const sets = [
     [set1A, set1B],
@@ -265,8 +323,8 @@ if (selectedPlayers.length < 2) {
   alert("Tenés que seleccionar jugadores.");
   return;
 }
-    const teamA = [Number(a1), Number(a2)].filter(Boolean);
-    const teamB = [Number(b1), Number(b2)].filter(Boolean);
+    const teamA = [a1, a2].filter(Boolean);
+    const teamB = [b1, b2].filter(Boolean);
 
     const newMatch: Match = {
       id: Date.now(),
