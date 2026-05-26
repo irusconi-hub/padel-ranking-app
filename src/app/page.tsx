@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 type Club = { id: string; name: string; city: string };
 
@@ -152,13 +153,27 @@ const averageElo =
     return players.find((p) => p.id === id)?.name ?? "Jugador";
   }
 
-  function addClub() {
-    if (!newClub.trim()) return;
-    const id = newClub.toLowerCase().replaceAll(" ", "-");
-    setClubs([...clubs, { id, name: newClub, city: "Argentina" }]);
-    setActiveClubId(id);
+async function addClub() {
+  if (!newClub.trim()) return;
+
+  const { data, error } = await supabase
+    .from("clubs")
+    .insert([
+      {
+        name: newClub,
+        city: "Argentina",
+      },
+    ])
+    .select();
+
+  console.log("SUPABASE CLUB INSERT:", data, error);
+
+  if (data && data[0]) {
+    setClubs([...clubs, data[0]]);
+    setActiveClubId(data[0].id);
     setNewClub("");
   }
+}
 
   function addPlayer() {
     if (!newPlayer.trim()) return;
