@@ -44,7 +44,39 @@ const initialPlayers: Player[] = [
   { id: "4", clubId: "san-fernando", name: "Martin", level: "6ta", elo: 1080, wins: 3, losses: 6 },
 ];
 
+const K_FACTOR = 32;
+const MAX_INDIVIDUAL_SHIFT = 0.35;
+const SKILL_GAP_DIVISOR = 1000;
 
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(value, max));
+}
+
+function expectedScore(teamElo: number, opponentTeamElo: number) {
+  return 1 / (1 + Math.pow(10, (opponentTeamElo - teamElo) / 400));
+}
+
+function individualWinWeight(playerElo: number, partnerElo: number) {
+  const skillGap = playerElo - partnerElo;
+  const shift = clamp(
+    skillGap / SKILL_GAP_DIVISOR,
+    -MAX_INDIVIDUAL_SHIFT,
+    MAX_INDIVIDUAL_SHIFT
+  );
+
+  return 0.5 - shift;
+}
+
+function individualLossWeight(playerElo: number, partnerElo: number) {
+  const skillGap = playerElo - partnerElo;
+  const shift = clamp(
+    skillGap / SKILL_GAP_DIVISOR,
+    -MAX_INDIVIDUAL_SHIFT,
+    MAX_INDIVIDUAL_SHIFT
+  );
+
+  return 0.5 + shift;
+}
 
 export default function Home() {
   const [clubs, setClubs] = useState(initialClubs);
@@ -96,7 +128,34 @@ useEffect(() => {
         }))
       );
     }
+const { data: matchesData, error: matchesError } = await supabase
+  .from("matches")
+  .select("*")
+  .order("created_at", { ascending: false });
+
+if (matchesError) {
+  console.log("ERROR LOADING MATCHES:", matchesError);
+}
+
+if (matchesData) {
+  setMatches(
+    matchesData.map((match) => ({
+      id: Date.now() + Math.random(),
+      clubId: match.club_id,
+      date: new Date(match.created_at).toLocaleDateString("es-AR"),
+      teamA: [match.team_a_player_1, match.team_a_player_2].filter(Boolean),
+      teamB: [match.team_b_player_1, match.team_b_player_2].filter(Boolean),
+      score: match.score,
+      winner: match.winner,
+    }))
+  );
+}
+
+
+
   }
+
+  
 
   loadData();
 }, []);
@@ -295,7 +354,7 @@ function getCategoryFromElo(elo: number) {
   return "9na";
 }
 
-  function registerMatch() {
+  async function registerMatch() {
     
     const finalScore = buildScore();
     const calculatedWinner = calculateWinner();
@@ -336,10 +395,40 @@ if (selectedPlayers.length < 2) {
       winner: calculatedWinner,
     };
 
+
+    const { data: insertedMatch, error: matchInsertError } = await supabase
+  .from("matches")
+  .insert([
+    {
+      club_id: activeClubId,
+      team_a:teamA,
+      team_b:teamB,
+      team_a_player_1: teamA[0] ?? null,
+      team_a_player_2: teamA[1] ?? null,
+      team_b_player_1: teamB[0] ?? null,
+      team_b_player_2: teamB[1] ?? null,
+      score: finalScore,
+      winner: calculatedWinner,
+    },
+  ])
+  .select();
+
+console.log("MATCH INSERT:", insertedMatch, matchInsertError);
+
+if (matchInsertError) {
+  alert("Error guardando el partido en Supabase.");
+  return;
+}
     const winners = calculatedWinner === "A" ? teamA : teamB;
     const losers = calculatedWinner === "A" ? teamB : teamA;
 
-    setMatches([newMatch, ...matches]);
+    setMatches([
+  {
+    ...newMatch,
+    id: Date.now(),
+  },
+  ...matches,
+]);
     setSuccessMessage("Partido guardado correctamente");
 
     const winnerTeam = calculatedWinner === "A" ? teamA : teamB;
@@ -360,65 +449,126 @@ setTimeout(() => {
   setSuccessMessage("");
 }, 3000);
 
+const playerById = Object.fromEntries(
+  players.map((player) => [player.id, player])
+);
+
 const avgTeamA =
-  teamA.reduce(
-    (sum, id) => sum + players.find((p) => p.id === id)!.elo,
-    0
-  ) / teamA.length;
+  teamA.reduce((sum, id) => sum + playerById[id].elo, 0) / teamA.length;
 
 const avgTeamB =
-  teamB.reduce(
-    (sum, id) => sum + players.find((p) => p.id === id)!.elo,
-    0
-  ) / teamB.length;
+  teamB.reduce((sum, id) => sum + playerById[id].elo, 0) / teamB.length;
 
-const expectedA = 1 / (1 + Math.pow(10, (avgTeamB - avgTeamA) / 400));
-const expectedB = 1 / (1 + Math.pow(10, (avgTeamA - avgTeamB) / 400));
+const expectedA = expectedScore(avgTeamA, avgTeamB);
+const expectedB = expectedScore(avgTeamB, avgTeamA);
 
 const scoreA = calculatedWinner === "A" ? 1 : 0;
 const scoreB = calculatedWinner === "B" ? 1 : 0;
 
-const k = 32;
+const teamADelta = Math.round(K_FACTOR * (scoreA - expectedA));
+const teamBDelta = Math.round(K_FACTOR * (scoreB - expectedB));
+
+function getPartnerId(playerId: string, team: string[]) {
+  return team.find((id) => id !== playerId);
+}
+
+function calculateIndividualDelta(
+  playerId: string,
+  team: string[],
+  teamDelta: number,
+  teamWon: boolean
+) {
+  const partnerId = getPartnerId(playerId, team);
+
+  if (!partnerId) {
+    return teamDelta;
+  }
+
+  const playerElo = playerById[playerId].elo;
+  const partnerElo = playerById[partnerId].elo;
+
+  if (teamWon) {
+    return Math.round(
+      Math.abs(teamDelta) * individualWinWeight(playerElo, partnerElo)
+    );
+  }
+
+  return -Math.round(
+    Math.abs(teamDelta) * individualLossWeight(playerElo, partnerElo)
+  );
+}
+
+const eloDeltas: Record<string, number> = {};
+
+teamA.forEach((playerId) => {
+  eloDeltas[playerId] = calculateIndividualDelta(
+    playerId,
+    teamA,
+    teamADelta,
+    calculatedWinner === "A"
+  );
+});
+
+teamB.forEach((playerId) => {
+  eloDeltas[playerId] = calculateIndividualDelta(
+    playerId,
+    teamB,
+    teamBDelta,
+    calculatedWinner === "B"
+  );
+});
 
 setPlayers((current) =>
   current.map((player) => {
-    if (teamA.includes(player.id)) {
-      return {
-        ...player,
-        elo: Math.round(
-          player.elo + k * (scoreA - expectedA)
-        ),
-        wins:
-          calculatedWinner === "A"
-            ? player.wins + 1
-            : player.wins,
-        losses:
-          calculatedWinner === "B"
-            ? player.losses + 1
-            : player.losses,
-      };
-    }
+    const delta = eloDeltas[player.id];
 
-    if (teamB.includes(player.id)) {
-      return {
-        ...player,
-        elo: Math.round(
-          player.elo + k * (scoreB - expectedB)
-        ),
-        wins:
-          calculatedWinner === "B"
-            ? player.wins + 1
-            : player.wins,
-        losses:
-          calculatedWinner === "A"
-            ? player.losses + 1
-            : player.losses,
-      };
-    }
+    if (delta === undefined) return player;
 
-    return player;
+    const playerWon = winners.includes(player.id);
+
+    return {
+      ...player,
+      elo: player.elo + delta,
+      wins: playerWon ? player.wins + 1 : player.wins,
+      losses: playerWon ? player.losses : player.losses + 1,
+    };
   })
 );
+
+  const updatedPlayers = players.map((player) => {
+  const delta = eloDeltas[player.id];
+
+  if (delta === undefined) return player;
+
+  const playerWon = winners.includes(player.id);
+
+  return {
+    ...player,
+    elo: player.elo + delta,
+    wins: playerWon ? player.wins + 1 : player.wins,
+    losses: playerWon ? player.losses : player.losses + 1,
+  };
+});
+
+console.log("PLAYERS TO UPDATE:", updatedPlayers);
+
+const updateResults = await Promise.all(
+  updatedPlayers
+    .filter((player) => eloDeltas[player.id] !== undefined)
+    .map((player) =>
+      supabase
+        .from("players")
+        .update({
+          elo: player.elo,
+          wins: player.wins,
+          losses: player.losses,
+        })
+        .eq("id", player.id)
+        .select()
+    )
+);
+
+console.log("SUPABASE UPDATE RESULTS:", updateResults);
 
     setA1("");
     setA2("");
