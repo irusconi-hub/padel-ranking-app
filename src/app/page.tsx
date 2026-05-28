@@ -13,6 +13,14 @@ type Activity = {
 };
 
 type Player = {
+  avatarUrl?: string;
+  bio?: string;
+  racketBrand?: string;
+  racketModel?: string;
+  preferredSide?: string;
+  dominantHand?: string;
+  playStyle?: string;
+  favoriteShot?: string;
   id: string;
   clubId: string;
   name: string;
@@ -85,6 +93,10 @@ export default function Home() {
   const [activities, setActivities] = useState<Activity[]>([]);
 useEffect(() => {
   async function loadData() {
+
+
+
+
     const { data: clubsData, error: clubsError } = await supabase
       .from("clubs")
       .select("*")
@@ -103,8 +115,15 @@ useEffect(() => {
         }))
       );
 
+
+      
+
       setActiveClubId(clubsData[0].id);
     }
+
+
+
+
 
     const { data: playersData, error: playersError } = await supabase
       .from("players")
@@ -115,19 +134,28 @@ useEffect(() => {
       console.log("ERROR LOADING PLAYERS:", playersError);
     }
 
-    if (playersData) {
-      setPlayers(
-        playersData.map((player) => ({
-          id: player.id,
-          clubId: player.club_id,
-          name: `${player.first_name} ${player.last_name}`,
-          level: "9na",
-          elo: player.elo,
-          wins: player.wins,
-          losses: player.losses,
-        }))
-      );
-    }
+if (playersData) {
+  setPlayers(
+    playersData.map((player: any) => ({
+      id: player.id,
+      clubId: player.club_id,
+      name: `${player.first_name} ${player.last_name}`,
+      level: "9na",
+      elo: player.elo,
+      wins: player.wins,
+      losses: player.losses,
+
+      avatarUrl: player.avatar_url ?? "",
+      bio: player.bio ?? "",
+      racketBrand: player.racket_brand ?? "",
+      racketModel: player.racket_model ?? "",
+      preferredSide: player.preferred_side ?? "",
+      dominantHand: player.dominant_hand ?? "",
+      playStyle: player.play_style ?? "",
+      favoriteShot: player.favorite_shot ?? "",
+    }))
+  );
+}
 const { data: matchesData, error: matchesError } = await supabase
   .from("matches")
   .select("*")
@@ -192,6 +220,7 @@ useEffect(() => {
   const [winner, setWinner] = useState<"A" | "B">("A");
   const [successMessage, setSuccessMessage] = useState("");
   const activeClub = clubs.find((c) => c.id === activeClubId);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
   const ranking = useMemo(() => {
     return players
@@ -629,7 +658,14 @@ console.log("SUPABASE UPDATE RESULTS:", updateResults);
 
   <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur transform transition-all duration-300 hover:scale-105 hover:bg-white/20">
     <p className="text-sm text-slate-400">Promedio</p>
-    <h3 className="mt-2 text-3xl font-black">{averageElo}</h3>
+    <p className="text-4xl font-bold">
+  {ranking.length > 0
+    ? Math.round(
+        ranking.reduce((sum, player) => sum + player.elo, 0) /
+          ranking.length
+      )
+    : 0}
+</p>
   </div>
 </div>
 <div className="mt-6 rounded-3xl bg-white/10 p-6">
@@ -699,7 +735,8 @@ console.log("SUPABASE UPDATE RESULTS:", updateResults);
                   {ranking.map((player, index) => (
                     <tr
   key={player.id}
-  className={`border-t border-white/10 transition-all duration-300 hover:bg-white/10 ${
+  onClick={() => setSelectedPlayer(player)}
+  className={`cursor-pointer border-t border-white/10 transition-all duration-300 hover:bg-white/10 ${
     index === 0 ? "bg-emerald-400/10" : ""
   }`}
 >
@@ -707,12 +744,33 @@ console.log("SUPABASE UPDATE RESULTS:", updateResults);
   {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : index + 1}
 </td>
                       <td className={`p-3 font-semibold ${index === 0 ? "text-emerald-300" : ""}`}>
-  {player.name}
-  {index === 0 && (
-    <span className="ml-2 rounded-full bg-emerald-400 px-2 py-1 text-xs font-bold text-slate-950">
-      Líder
-    </span>
+  <div className="flex items-center gap-3">
+  {player.avatarUrl ? (
+    <img
+      src={player.avatarUrl}
+      alt={player.name}
+      className="h-10 w-10 rounded-full object-cover border border-white/20"
+    />
+  ) : (
+    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500 font-bold text-black">
+      {player.name.charAt(0)}
+    </div>
   )}
+
+  <div>
+    <p className="font-semibold">{player.name}</p>
+
+    {player.racketBrand && (
+      <p className="text-xs text-slate-400">
+        {player.racketBrand} {player.racketModel}
+      </p>
+    )}
+  </div>
+</div>
+
+
+
+
 </td>
                       <td className="p-3">{getCategoryFromElo(player.elo)}</td>
                       <td className="p-3 text-right">{player.elo}</td>
@@ -835,6 +893,67 @@ console.log("SUPABASE UPDATE RESULTS:", updateResults);
           </div>
         </div>
       </section>
+
+      {selectedPlayer && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+    <div className="w-full max-w-md rounded-3xl bg-slate-900 p-6 text-white shadow-2xl">
+      <button
+        onClick={() => setSelectedPlayer(null)}
+        className="mb-4 rounded-full bg-white/10 px-3 py-1 text-sm"
+      >
+        Cerrar
+      </button>
+
+      <div className="flex items-center gap-4">
+        {selectedPlayer.avatarUrl ? (
+          <img
+            src={selectedPlayer.avatarUrl}
+            alt={selectedPlayer.name}
+            className="h-20 w-20 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-400 text-3xl font-black text-slate-950">
+            {selectedPlayer.name.charAt(0)}
+          </div>
+        )}
+
+        <div>
+          <h2 className="text-2xl font-black">{selectedPlayer.name}</h2>
+          <p className="text-slate-400">{getCategoryFromElo(selectedPlayer.elo)}</p>
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-3 gap-3">
+        <div className="rounded-2xl bg-white/10 p-4 text-center">
+          <p className="text-sm text-slate-400">ELO</p>
+          <p className="text-2xl font-black text-emerald-300">{selectedPlayer.elo}</p>
+        </div>
+        <div className="rounded-2xl bg-white/10 p-4 text-center">
+          <p className="text-sm text-slate-400">Ganados</p>
+          <p className="text-2xl font-black">{selectedPlayer.wins}</p>
+        </div>
+        <div className="rounded-2xl bg-white/10 p-4 text-center">
+          <p className="text-sm text-slate-400">Perdidos</p>
+          <p className="text-2xl font-black">{selectedPlayer.losses}</p>
+        </div>
+      </div>
+
+      <div className="mt-5 space-y-3 rounded-2xl bg-white/10 p-4">
+        <p><strong>Paleta:</strong> {selectedPlayer.racketBrand || "-"} {selectedPlayer.racketModel || ""}</p>
+        <p><strong>Lado:</strong> {selectedPlayer.preferredSide || "-"}</p>
+        <p><strong>Mano:</strong> {selectedPlayer.dominantHand || "-"}</p>
+        <p><strong>Estilo:</strong> {selectedPlayer.playStyle || "-"}</p>
+        <p><strong>Golpe favorito:</strong> {selectedPlayer.favoriteShot || "-"}</p>
+      </div>
+
+      {selectedPlayer.bio && (
+        <p className="mt-5 rounded-2xl bg-white/10 p-4 text-slate-200">
+          “{selectedPlayer.bio}”
+        </p>
+      )}
+    </div>
+  </div>
+)}
     </main>
   );
 }
