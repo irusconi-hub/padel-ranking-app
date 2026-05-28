@@ -222,6 +222,19 @@ useEffect(() => {
   const activeClub = clubs.find((c) => c.id === activeClubId);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+const [profileForm, setProfileForm] = useState({
+  avatarUrl: "",
+  bio: "",
+  racketBrand: "",
+  racketModel: "",
+  preferredSide: "",
+  dominantHand: "",
+  playStyle: "",
+  favoriteShot: "",
+});
+
   const ranking = useMemo(() => {
     return players
       .filter((p) => p.clubId === activeClubId)
@@ -612,6 +625,66 @@ console.log("SUPABASE UPDATE RESULTS:", updateResults);
     setWinner("A");
   }
 
+  function startEditingProfile(player: Player) {
+  console.log("EDITING PLAYER:", player);
+
+  setProfileForm({
+    avatarUrl: player.avatarUrl ?? "",
+    bio: player.bio ?? "",
+    racketBrand: player.racketBrand ?? "",
+    racketModel: player.racketModel ?? "",
+    preferredSide: player.preferredSide ?? "",
+    dominantHand: player.dominantHand ?? "",
+    playStyle: player.playStyle ?? "",
+    favoriteShot: player.favoriteShot ?? "",
+  });
+
+  setIsEditingProfile(true);
+}
+async function savePlayerProfile() {
+  if (!selectedPlayer) return;
+
+  const { error } = await supabase
+    .from("players")
+    .update({
+      avatar_url: profileForm.avatarUrl,
+      bio: profileForm.bio,
+      racket_brand: profileForm.racketBrand,
+      racket_model: profileForm.racketModel,
+      preferred_side: profileForm.preferredSide,
+      dominant_hand: profileForm.dominantHand,
+      play_style: profileForm.playStyle,
+      favorite_shot: profileForm.favoriteShot,
+    })
+    .eq("id", selectedPlayer.id);
+
+  if (error) {
+    console.log("ERROR UPDATING PROFILE:", error);
+    alert("No se pudo guardar el perfil.");
+    return;
+  }
+
+  const updatedPlayer: Player = {
+    ...selectedPlayer,
+    avatarUrl: profileForm.avatarUrl,
+    bio: profileForm.bio,
+    racketBrand: profileForm.racketBrand,
+    racketModel: profileForm.racketModel,
+    preferredSide: profileForm.preferredSide,
+    dominantHand: profileForm.dominantHand,
+    playStyle: profileForm.playStyle,
+    favoriteShot: profileForm.favoriteShot,
+  };
+
+  setPlayers((current) =>
+    current.map((player) =>
+      player.id === selectedPlayer.id ? updatedPlayer : player
+    )
+  );
+
+  setSelectedPlayer(updatedPlayer);
+  setIsEditingProfile(false);
+}
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       {successMessage && (
@@ -735,7 +808,10 @@ console.log("SUPABASE UPDATE RESULTS:", updateResults);
                   {ranking.map((player, index) => (
                     <tr
   key={player.id}
-  onClick={() => setSelectedPlayer(player)}
+  onClick={() => {
+  setSelectedPlayer(player);
+  setIsEditingProfile(false);
+}}
   className={`cursor-pointer border-t border-white/10 transition-all duration-300 hover:bg-white/10 ${
     index === 0 ? "bg-emerald-400/10" : ""
   }`}
@@ -896,13 +972,83 @@ console.log("SUPABASE UPDATE RESULTS:", updateResults);
 
       {selectedPlayer && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-    <div className="w-full max-w-md rounded-3xl bg-slate-900 p-6 text-white shadow-2xl">
-      <button
-        onClick={() => setSelectedPlayer(null)}
-        className="mb-4 rounded-full bg-white/10 px-3 py-1 text-sm"
-      >
-        Cerrar
-      </button>
+    <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-slate-900 p-6 text-white shadow-2xl">
+      <div className="mb-5 flex flex-wrap gap-2">
+  <button
+    type="button"
+    onClick={() => {
+      setSelectedPlayer(null);
+      setIsEditingProfile(false);
+    }}
+    className="rounded-full bg-white/10 px-3 py-1 text-sm"
+  >
+    Cerrar
+  </button>
+
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation();
+      if (!selectedPlayer) return;
+      startEditingProfile(selectedPlayer);
+    }}
+    className="rounded-full bg-emerald-400 px-3 py-1 text-sm font-bold text-slate-950"
+  >
+    Editar perfil
+  </button>
+
+  {isEditingProfile && (
+    <button
+      type="button"
+      onClick={savePlayerProfile}
+      className="rounded-full bg-cyan-400 px-3 py-1 text-sm font-bold text-slate-950"
+    >
+      Guardar perfil
+    </button>
+  )}
+</div>
+
+{isEditingProfile && (
+  <div className="mb-5 space-y-3 rounded-2xl bg-white/10 p-4">
+    <p className="font-bold text-emerald-300">Editando perfil</p>
+
+    <input
+      value={profileForm.avatarUrl}
+      onChange={(e) =>
+        setProfileForm({ ...profileForm, avatarUrl: e.target.value })
+      }
+      placeholder="URL de foto"
+      className="w-full rounded-xl bg-white p-3 text-slate-950"
+    />
+
+    <input
+      value={profileForm.racketBrand}
+      onChange={(e) =>
+        setProfileForm({ ...profileForm, racketBrand: e.target.value })
+      }
+      placeholder="Marca de paleta"
+      className="w-full rounded-xl bg-white p-3 text-slate-950"
+    />
+
+    <input
+      value={profileForm.racketModel}
+      onChange={(e) =>
+        setProfileForm({ ...profileForm, racketModel: e.target.value })
+      }
+      placeholder="Modelo de paleta"
+      className="w-full rounded-xl bg-white p-3 text-slate-950"
+    />
+
+    <textarea
+      value={profileForm.bio}
+      onChange={(e) =>
+        setProfileForm({ ...profileForm, bio: e.target.value })
+      }
+      placeholder="Bio corta"
+      className="w-full rounded-xl bg-white p-3 text-slate-950"
+    />
+  </div>
+)}
 
       <div className="flex items-center gap-4">
         {selectedPlayer.avatarUrl ? (
