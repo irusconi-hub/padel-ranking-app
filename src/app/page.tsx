@@ -647,15 +647,16 @@ async function savePlayerProfile() {
   const { error } = await supabase
     .from("players")
     .update({
-      avatar_url: profileForm.avatarUrl,
-      bio: profileForm.bio,
-      racket_brand: profileForm.racketBrand,
-      racket_model: profileForm.racketModel,
-      preferred_side: profileForm.preferredSide,
-      dominant_hand: profileForm.dominantHand,
-      play_style: profileForm.playStyle,
-      favorite_shot: profileForm.favoriteShot,
-    })
+  avatar_url: profileForm.avatarUrl,
+  bio: profileForm.bio,
+  racket_brand: profileForm.racketBrand,
+  racket_model: profileForm.racketModel,
+
+  preferred_side: profileForm.preferredSide,
+  dominant_hand: profileForm.dominantHand,
+  play_style: profileForm.playStyle,
+  favorite_shot: profileForm.favoriteShot,
+})
     .eq("id", selectedPlayer.id);
 
   if (error) {
@@ -685,6 +686,43 @@ async function savePlayerProfile() {
   setSelectedPlayer(updatedPlayer);
   setIsEditingProfile(false);
 }
+
+
+async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
+  if (!selectedPlayer) return;
+
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const fileExt = file.name.split(".").pop();
+  const filePath = selectedPlayer.id + "-" + Date.now() + "." + fileExt;
+
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(filePath, file);
+
+  if (uploadError) {
+    console.log("ERROR UPLOADING AVATAR:", uploadError);
+    alert("No se pudo subir la foto.");
+    return;
+  }
+
+  const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+setProfileForm((current) => ({
+  ...current,
+  avatarUrl: data.publicUrl,
+}));
+  console.log("PUBLIC AVATAR URL:", data.publicUrl);
+}
+function getVisibleAvatarUrl() {
+  if (isEditingProfile && profileForm.avatarUrl) {
+    return profileForm.avatarUrl;
+  }
+
+  return selectedPlayer?.avatarUrl ?? "";
+}
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       {successMessage && (
@@ -1013,13 +1051,11 @@ async function savePlayerProfile() {
     <p className="font-bold text-emerald-300">Editando perfil</p>
 
     <input
-      value={profileForm.avatarUrl}
-      onChange={(e) =>
-        setProfileForm({ ...profileForm, avatarUrl: e.target.value })
-      }
-      placeholder="URL de foto"
-      className="w-full rounded-xl bg-white p-3 text-slate-950"
-    />
+  type="file"
+  accept="image/*"
+  onChange={uploadAvatar}
+  className="w-full rounded-xl bg-white p-3 text-slate-950"
+/>
 
     <input
       value={profileForm.racketBrand}
@@ -1039,6 +1075,63 @@ async function savePlayerProfile() {
       className="w-full rounded-xl bg-white p-3 text-slate-950"
     />
 
+    {profileForm.avatarUrl && (
+  <img
+    src={profileForm.avatarUrl}
+    alt="Preview avatar"
+    className="h-20 w-20 rounded-full object-cover"
+  />
+)}
+
+    <select
+  value={profileForm.preferredSide}
+  onChange={(e) =>
+    setProfileForm({ ...profileForm, preferredSide: e.target.value })
+  }
+  className="w-full rounded-xl bg-white p-3 text-slate-950"
+>
+  <option value="">Lado preferido</option>
+  <option value="Derecha">Derecha</option>
+  <option value="Revés">Revés</option>
+  <option value="Ambos">Ambos</option>
+</select>
+
+<select
+  value={profileForm.dominantHand}
+  onChange={(e) =>
+    setProfileForm({ ...profileForm, dominantHand: e.target.value })
+  }
+  className="w-full rounded-xl bg-white p-3 text-slate-950"
+>
+  <option value="">Mano hábil</option>
+  <option value="Derecho">Derecho</option>
+  <option value="Zurdo">Zurdo</option>
+</select>
+
+<select
+  value={profileForm.playStyle}
+  onChange={(e) =>
+    setProfileForm({ ...profileForm, playStyle: e.target.value })
+  }
+  className="w-full rounded-xl bg-white p-3 text-slate-950"
+>
+  <option value="">Estilo de juego</option>
+  <option value="Ofensivo">Ofensivo</option>
+  <option value="Defensivo">Defensivo</option>
+  <option value="Táctico">Táctico</option>
+  <option value="Potente">Potente</option>
+  <option value="Consistente">Consistente</option>
+</select>
+
+<input
+  value={profileForm.favoriteShot}
+  onChange={(e) =>
+    setProfileForm({ ...profileForm, favoriteShot: e.target.value })
+  }
+  placeholder="Golpe favorito"
+  className="w-full rounded-xl bg-white p-3 text-slate-950"
+/>
+
     <textarea
       value={profileForm.bio}
       onChange={(e) =>
@@ -1051,23 +1144,24 @@ async function savePlayerProfile() {
 )}
 
       <div className="flex items-center gap-4">
-        {selectedPlayer.avatarUrl ? (
-          <img
-            src={selectedPlayer.avatarUrl}
-            alt={selectedPlayer.name}
-            className="h-20 w-20 rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-400 text-3xl font-black text-slate-950">
-            {selectedPlayer.name.charAt(0)}
-          </div>
-        )}
+  {getVisibleAvatarUrl() ? (
+    <img
+      key={getVisibleAvatarUrl()}
+      src={getVisibleAvatarUrl()}
+      alt={selectedPlayer.name}
+      className="h-20 w-20 rounded-full object-cover"
+    />
+  ) : (
+    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-400 text-3xl font-black text-slate-950">
+      {selectedPlayer.name.charAt(0)}
+    </div>
+  )}
 
-        <div>
-          <h2 className="text-2xl font-black">{selectedPlayer.name}</h2>
-          <p className="text-slate-400">{getCategoryFromElo(selectedPlayer.elo)}</p>
-        </div>
-      </div>
+  <div>
+    <h2 className="text-2xl font-black">{selectedPlayer.name}</h2>
+    <p className="text-slate-400">{getCategoryFromElo(selectedPlayer.elo)}</p>
+  </div>
+</div>
 
       <div className="mt-6 grid grid-cols-3 gap-3">
         <div className="rounded-2xl bg-white/10 p-4 text-center">
