@@ -709,11 +709,21 @@ async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
 
   const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
-setProfileForm((current) => ({
-  ...current,
-  avatarUrl: data.publicUrl,
-}));
-  console.log("PUBLIC AVATAR URL:", data.publicUrl);
+const publicUrl = data.publicUrl;
+
+console.log("PUBLIC AVATAR URL:", publicUrl);
+
+setProfileForm((current) => {
+  const next = {
+    ...current,
+    avatarUrl: publicUrl,
+  };
+
+  console.log("NEXT PROFILE FORM:", next);
+
+  return next;
+});
+
 }
 function getVisibleAvatarUrl() {
   if (isEditingProfile && profileForm.avatarUrl) {
