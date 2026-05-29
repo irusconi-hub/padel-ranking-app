@@ -790,7 +790,7 @@ function getVisibleAvatarUrl() {
   </div>
 </div>
 <div className="mt-6 rounded-3xl bg-white/10 p-6">
-  <h2 className="mb-4 text-xl font-semibold">Última actividad</h2>
+  <h2 className="mb-2 text-xl font-semibold">Última actividad</h2>
 
   {clubActivities.length === 0 ? (
     <p className="text-slate-400">Todavía no hay actividad registrada.</p>
@@ -840,6 +840,13 @@ function getVisibleAvatarUrl() {
           <div className="rounded-3xl bg-white/10 p-6 lg:col-span-2">
             <h2 className="text-2xl font-semibold">{activeClub?.name}</h2>
             <p className="mb-5 text-slate-400">Ranking actual del club</p>
+            <div className="mb-6 overflow-hidden rounded-2xl bg-white p-4">
+  <img
+    src="/BMSports.jpeg"
+    alt="BM Sports"
+    className="h-20 w-full object-contain"
+  />
+</div>
 
             <div className="overflow-hidden rounded-2xl border border-white/10">
               <table className="w-full text-left text-sm md:text-base">
