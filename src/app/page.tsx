@@ -997,7 +997,7 @@ function getVisibleAvatarUrl() {
   </div>
 </div>
 </td>
-                      <td className={"p-3 font-semibold " + (index === 0 ? "text-emerald-300" : "")}>
+                      <td className={"p-2 md:p-3 font-semibold " + (index === 0 ? "text-emerald-300" : "")}>
   <div className="flex items-center gap-3">
   {player.avatarUrl ? (
     <img
@@ -1032,9 +1032,9 @@ function getVisibleAvatarUrl() {
 
 
 </td>
-                      <td className="p-3">{getCategoryFromElo(player.elo)}</td>
-                      <td className="p-3 text-right">{player.elo}</td>
-                      <td className="p-3 text-right">{player.wins}G / {player.losses}P</td>
+                      <td className="p-2 md:p-3">{getCategoryFromElo(player.elo)}</td>
+                      <td className="p-2 md:p-3 text-right">{player.elo}</td>
+                      <td className="p-2 md:p-3 text-right">{player.wins}G / {player.losses}P</td>
                     </tr>
                   ))}
                 </tbody>
