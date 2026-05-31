@@ -41,15 +41,10 @@ type Match = {
 };
 
 const initialClubs: Club[] = [
-  { id: "san-fernando", name: "Club San Fernando", city: "Victoria" },
   { id: "bm-sports", name: "BM Sports", city: "Zona Norte" },
 ];
 
 const initialPlayers: Player[] = [
-  { id: "1", clubId: "san-fernando", name: "Nacho Rusconi", level: "5ta", elo: 1240, wins: 8, losses: 3 },
-  { id: "2", clubId: "san-fernando", name: "Fede Gandolfo", level: "5ta", elo: 1195, wins: 6, losses: 4 },
-  { id: "3", clubId: "san-fernando", name: "Mariano", level: "6ta", elo: 1130, wins: 5, losses: 5 },
-  { id: "4", clubId: "san-fernando", name: "Martin", level: "6ta", elo: 1080, wins: 3, losses: 6 },
 ];
 
 const K_FACTOR = 32;
@@ -975,7 +970,10 @@ function getVisibleAvatarUrl() {
     index === 0 ? "bg-emerald-400/10" : ""
   }`}
 >
+ <td>
                       <div className="flex items-center gap-2 text-base">
+
+                        
   <span>
     <span>#{index + 1}</span>
 
@@ -998,6 +996,7 @@ function getVisibleAvatarUrl() {
 ))}
   </div>
 </div>
+</td>
                       <td className={"p-3 font-semibold " + (index === 0 ? "text-emerald-300" : "")}>
   <div className="flex items-center gap-3">
   {player.avatarUrl ? (
