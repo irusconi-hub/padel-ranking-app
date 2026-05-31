@@ -937,7 +937,7 @@ function getVisibleAvatarUrl() {
           </div>
 
           <div className="rounded-3xl bg-white/10 p-6 lg:col-span-2">
-            <h2 className="text-2xl font-semibold">{activeClub?.name}</h2>
+            <h2 className="w-full overflow-x-auto">{activeClub?.name}</h2>
             <p className="mb-5 text-slate-400">Ranking actual del club</p>
             <div className="mb-6 overflow-visible rounded-2xl bg-white p-4">
   <img
@@ -947,7 +947,7 @@ function getVisibleAvatarUrl() {
   />
 </div>
 
-            <div className="overflow-hidden-x-auto rounded-2xl border border-white/10">
+            <div className="overflow-visible-x-auto rounded-2xl border border-white/10">
               <table className="w-full text-left text-sm md:text-base">
                 <thead className="bg-white/10">
                   <tr>
