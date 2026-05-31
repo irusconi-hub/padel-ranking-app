@@ -948,14 +948,14 @@ function getVisibleAvatarUrl() {
 </div>
 
             <div className="overflow-hidden-x-auto rounded-2xl border border-white/10">
-              <table className="min-w-[520px] w-full text-left text-sm md:text-base">
+              <table className="w-full text-left text-sm md:text-base">
                 <thead className="bg-white/10">
                   <tr>
-                    <th className="w-auto p-3">#</th>
-                    <th className="p-3">Jugador</th>
-                    <th className="p-3">Cat.</th>
-                    <th className="p-3 text-right">ELO</th>
-                    <th className="p-3 text-right">Récord</th>
+                    <th className="p-2">#</th>
+                    <th className="p-2">Jugador</th>
+                    <th className="p-2">Cat.</th>
+                    <th className="p-2 text-right">ELO</th>
+                    <th className="p-2 text-right">Récord</th>
                   </tr>
                 </thead>
                 <tbody>
