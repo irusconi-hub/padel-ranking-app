@@ -379,14 +379,14 @@ function calculateWinner() {
 }
 
 function getCategoryFromElo(elo: number) {
-  if (elo >= 1600) return "1ra";
-  if (elo >= 1500) return "2da";
-  if (elo >= 1400) return "3ra";
-  if (elo >= 1300) return "4ta";
-  if (elo >= 1200) return "5ta";
-  if (elo >= 1100) return "6ta";
-  if (elo >= 1000) return "7ma";
-  if (elo >= 900) return "8va";
+  if (elo >= 1400) return "1ra";
+  if (elo >= 1300) return "2da";
+  if (elo >= 1200) return "3ra";
+  if (elo >= 1100) return "4ta";
+  if (elo >= 1000) return "5ta";
+  if (elo >= 900) return "6ta";
+  if (elo >= 850) return "7ma";
+  if (elo >= 800) return "8va";
 
   return "9na";
 }
