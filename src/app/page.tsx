@@ -859,7 +859,7 @@ function getVisibleAvatarUrl() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-8">
+      <section className="mx-auto max-w-6xl px-2 md:px-6 py-8">
         <div className="mb-6 grid gap-4 md:grid-cols-4">
   <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur transform transition-all duration-300 hover:scale-105 hover:bg-white/20">
     <p className="text-sm text-slate-400">Jugadores</p>
