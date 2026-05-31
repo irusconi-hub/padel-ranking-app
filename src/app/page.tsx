@@ -170,7 +170,7 @@ if (matchesData) {
     matchesData.map((match) => ({
       id: Date.now() + Math.random(),
       clubId: match.club_id,
-      date: new Date(match.created_at).toLocaleDateString("es-AR"),
+      date: match.created_at,
       teamA: [match.team_a_player_1, match.team_a_player_2].filter(Boolean),
       teamB: [match.team_b_player_1, match.team_b_player_2].filter(Boolean),
       score: match.score,
@@ -707,6 +707,7 @@ async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
     return;
   }
 
+
   const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
 const publicUrl = data.publicUrl;
@@ -724,7 +725,110 @@ setProfileForm((current) => {
   return next;
 });
 
+
 }
+
+  function getPlayerBadges(player: Player) {
+  const badges = [];
+
+  const matchesLast30Days = matches.filter((match) => {
+    const matchDate = new Date(match.date);
+    const now = new Date();
+
+    const diffInDays =
+      (now.getTime() - matchDate.getTime()) / (1000 * 60 * 60 * 24);
+
+    const playerPlayed =
+      match.teamA.includes(player.id) ||
+      match.teamB.includes(player.id);
+
+    return playerPlayed && diffInDays <= 14;
+  });
+
+  const matchesPerWeek = matchesLast30Days.length / 1;
+
+if (matchesPerWeek < 0) {
+  badges.push({
+    icon: "💤",
+    label: "Inactivo",
+  });
+}
+
+if (matchesPerWeek > 1) {
+  badges.push({
+    icon: "🚀",
+    label: "On Fire",
+  });
+}
+
+  if (matchesLast30Days.length >= 20) {
+    badges.push({
+      icon: "🔄",
+      label: "Full Padel",
+    });
+  }
+
+  const playerMatches = matches
+    .filter(
+      (match) =>
+        match.teamA.includes(player.id) ||
+        match.teamB.includes(player.id)
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.date).getTime() -
+        new Date(a.date).getTime()
+    );
+
+  let winStreak = 0;
+
+  for (const match of playerMatches) {
+    const playerWon =
+      (match.winner === "A" && match.teamA.includes(player.id)) ||
+      (match.winner === "B" && match.teamB.includes(player.id));
+
+    if (playerWon) {
+      winStreak++;
+    } else {
+      break;
+    }
+  }
+
+  if (winStreak >= 3) {
+    badges.push({
+      icon: "🔥",
+      label: "En racha",
+    });
+  }
+
+  if (winStreak >= 5) {
+    badges.push({
+      icon: "⚡",
+      label: "Imparable",
+    });
+  }
+
+  if (matchesPerWeek > 2 && winStreak >= 3) {
+    badges.push({
+      icon: "🧨",
+      label: "Intratable",
+    });
+  }
+
+  if (player.name.includes("Nacho")) {
+  badges.push({
+    icon: "🧪",
+    label: "Test badge",
+  });
+}
+
+
+  return badges;
+}
+
+
+
+
 function getVisibleAvatarUrl() {
   if (isEditingProfile && profileForm.avatarUrl) {
     return profileForm.avatarUrl;
@@ -840,7 +944,7 @@ function getVisibleAvatarUrl() {
           <div className="rounded-3xl bg-white/10 p-6 lg:col-span-2">
             <h2 className="text-2xl font-semibold">{activeClub?.name}</h2>
             <p className="mb-5 text-slate-400">Ranking actual del club</p>
-            <div className="mb-6 overflow-hidden rounded-2xl bg-white p-4">
+            <div className="mb-6 overflow-visible rounded-2xl bg-white p-4">
   <img
     src="/BMSports.jpeg"
     alt="BM Sports"
@@ -848,11 +952,11 @@ function getVisibleAvatarUrl() {
   />
 </div>
 
-            <div className="overflow-hidden rounded-2xl border border-white/10">
+            <div className="overflow-visible rounded-2xl border border-white/10">
               <table className="w-full text-left text-sm md:text-base">
                 <thead className="bg-white/10">
                   <tr>
-                    <th className="p-3">#</th>
+                    <th className="w-28 p-3">#</th>
                     <th className="p-3">Jugador</th>
                     <th className="p-3">Cat.</th>
                     <th className="p-3 text-right">ELO</th>
@@ -871,10 +975,30 @@ function getVisibleAvatarUrl() {
     index === 0 ? "bg-emerald-400/10" : ""
   }`}
 >
-                      <td className="p-3">
-  {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : index + 1}
-</td>
-                      <td className={`p-3 font-semibold ${index === 0 ? "text-emerald-300" : ""}`}>
+                      <div className="flex items-center gap-2 text-base">
+  <span>
+    <span>#{index + 1}</span>
+
+<span>
+  {index === 0
+    ? "🥇"
+    : ""}
+</span>
+  </span>
+
+
+  <div className="flex gap-1">
+{getPlayerBadges(player).map((badge) => (
+  <span
+    key={badge.label}
+    title={badge.label}
+  >
+    {badge.icon}
+  </span>
+))}
+  </div>
+</div>
+                      <td className={"p-3 font-semibold " + (index === 0 ? "text-emerald-300" : "")}>
   <div className="flex items-center gap-3">
   {player.avatarUrl ? (
     <img
@@ -889,6 +1013,12 @@ function getVisibleAvatarUrl() {
   )}
 
   <div>
+    <div className="flex items-center gap-2">
+
+  <div className="flex gap-1">
+    
+  </div>
+</div>
     <p className="font-semibold">{player.name}</p>
 
     {player.racketBrand && (
