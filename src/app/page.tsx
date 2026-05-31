@@ -947,8 +947,8 @@ function getVisibleAvatarUrl() {
   />
 </div>
 
-            <div className="overflow-visible rounded-2xl border border-white/10">
-              <table className="w-full text-left text-sm md:text-base">
+            <div className="overflow-visible auto rounded-2xl border border-white/10">
+              <table className="min-w-[700px] w-full text-left text-sm md:text-base">
                 <thead className="bg-white/10">
                   <tr>
                     <th className="w-28 p-3">#</th>
