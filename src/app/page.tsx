@@ -47,6 +47,8 @@ const initialClubs: Club[] = [
 const initialPlayers: Player[] = [
 ];
 
+
+
 const K_FACTOR = 32;
 const MAX_INDIVIDUAL_SHIFT = 0.35;
 const SKILL_GAP_DIVISOR = 1000;
@@ -86,6 +88,9 @@ export default function Home() {
   const [players, setPlayers] = useState(initialPlayers);
   const [matches, setMatches] = useState<Match[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+const [showLeaderCelebration, setShowLeaderCelebration] = useState(false);
+
+
 useEffect(() => {
   async function loadData() {
 
@@ -242,16 +247,22 @@ const [profileForm, setProfileForm] = useState({
 const totalMatches = clubMatches.length;
 
 const leader = ranking[0]?.name ?? "Sin líder";
+
+useEffect(() => {
+  if (!ranking[0]) return;
+
+  setShowLeaderCelebration(true);
+
+  const timer = setTimeout(() => {
+    setShowLeaderCelebration(false);
+  }, 3000);
+
+  return () => clearTimeout(timer);
+}, [activeClubId, ranking[0]?.id]);
 const clubActivities = activities.filter(
   (a) => a.clubId === activeClubId
 );
-const averageElo =
-  ranking.length > 0
-    ? Math.round(
-        ranking.reduce((sum, player) => sum + player.elo, 0) /
-          ranking.length
-      )
-    : 0;
+const leaderPoints = ranking[0]?.elo ?? 0;
 
   function isPlayerSelected(playerId: string, currentValue: string) {
   const selected = [a1, a2, b1, b2].filter(Boolean);
@@ -834,6 +845,34 @@ function getVisibleAvatarUrl() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
+
+      {showLeaderCelebration && ranking[0] && (
+  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-6">
+    <div className="animate-pulse rounded-3xl border border-emerald-300/40 bg-slate-900 p-8 text-center shadow-2xl">
+      {ranking[0].avatarUrl ? (
+        <img
+          src={ranking[0].avatarUrl}
+          alt={ranking[0].name}
+          className="mx-auto h-32 w-32 rounded-full border-4 border-emerald-400 object-cover shadow-2xl"
+        />
+      ) : (
+        <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-emerald-400 text-5xl font-black text-slate-950">
+          {ranking[0].name.charAt(0)}
+        </div>
+      )}
+
+      <p className="mt-6 text-sm font-bold uppercase tracking-[0.3em] text-emerald-300">
+        Líder del ranking
+      </p>
+
+      <h2 className="mt-2 text-4xl font-black">{ranking[0].name}</h2>
+
+      <p className="mt-2 text-xl font-bold text-slate-300">
+        {ranking[0].elo} ELO
+      </p>
+    </div>
+  </div>
+)}
       {successMessage && (
   <div className="fixed right-6 top-6 z-50 rounded-2xl border border-emerald-300/30 bg-emerald-500 px-6 py-4 text-lg font-bold text-slate-950 shadow-2xl">
     ✅ {successMessage}
@@ -877,16 +916,9 @@ function getVisibleAvatarUrl() {
   </div>
 
   <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur transform transition-all duration-300 hover:scale-105 hover:bg-white/20">
-    <p className="text-sm text-slate-400">Promedio</p>
-    <p className="text-4xl font-bold">
-  {ranking.length > 0
-    ? Math.round(
-        ranking.reduce((sum, player) => sum + player.elo, 0) /
-          ranking.length
-      )
-    : 0}
-</p>
-  </div>
+    <p className="text-sm text-slate-400">Top ELO</p>
+    <h3 className="text-4xl font-bold">{leaderPoints}</h3>
+    </div>
 </div>
 <div className="mt-6 rounded-3xl bg-white/10 p-6">
   <h2 className="mb-2 text-xl font-semibold">Última actividad</h2>
