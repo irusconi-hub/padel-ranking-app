@@ -1035,7 +1035,7 @@ function getVisibleAvatarUrl() {
     <img
       src={player.avatarUrl}
       alt={player.name}
-      className="h-10 w-10 flex-shrink-0 rounded-full object-cover border border-white/20"
+      className="h-10 w-10 flex-none rounded-full object-cover"
     />
   ) : (
     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500 font-bold text-black">
